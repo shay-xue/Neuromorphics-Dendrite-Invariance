@@ -1,0 +1,16 @@
+# Virtual environment
+neuro_env/
+
+# Homework and course materials — excluded from version control
+HW2.ipynb
+Neuromorphics Project Proposal.pdf
+Slides and Readings/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
