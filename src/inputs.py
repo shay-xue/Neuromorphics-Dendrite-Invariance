@@ -5,13 +5,9 @@ when spikes happen, which segment they hit, and the AMPA current they create.
 """
 
 from __future__ import annotations
-
 from dataclasses import dataclass
-
 import numpy as np
-
 from .channels import E_AMPA
-
 
 @dataclass
 class AMPAEvent:
