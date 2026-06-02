@@ -1,17 +1,21 @@
 """Input spike generators and AMPA conductance functions.
 
-This file only handles the input side:
+This file handles the input side:
 when spikes happen, which segment they hit, and the AMPA current they create.
 """
 
 from __future__ import annotations
 from dataclasses import dataclass
+
 import numpy as np
+
 from .channels import E_AMPA
+
 
 @dataclass
 class AMPAEvent:
     """One AMPA input spike onto one dendrite segment."""
+
     segment: int
     time: float
     weight: float = 1.0
@@ -23,10 +27,7 @@ def alpha_conductance(
     weight: float = 1.0,
     tau: float = 3.0,
 ) -> float:
-    """AMPA alpha-function conductance from one spike.
-
-    tau controls how quickly the AMPA input rises and decays.
-    """
+    """AMPA alpha-function conductance from one spike."""
     x = t - spike_time
 
     if x < 0:
@@ -75,10 +76,7 @@ def make_sleep_like_sequence(
     step_ms: float = 5.0,
     weight: float = 1.0,
 ) -> tuple[list[dict], dict[int, list[float]]]:
-    """Make a one-spike-per-segment sequence.
-
-    Example: A -> B -> C -> D, where each segment fires once.
-    """
+    """Make a one-spike-per-segment sequence."""
     events = []
     raster: dict[int, list[float]] = {}
 
@@ -109,7 +107,7 @@ def make_burst_sequence(
     """Make a burst version of the same sequence.
 
     onset_step_ms controls when the next segment starts.
-    If onset_step_ms is small, bursts overlap more.
+    Smaller onset_step_ms means more overlap.
     """
     events = []
     raster: dict[int, list[float]] = {}
@@ -140,11 +138,7 @@ def burst_overlap_duration(
     burst_len: int,
     isi_ms: float,
 ) -> float:
-    """Compute overlap time between neighboring bursts.
-
-    Positive value = bursts overlap.
-    Zero value = bursts just touch or do not overlap.
-    """
+    """Compute overlap time between neighboring bursts."""
     burst_duration = (burst_len - 1) * isi_ms
     overlap = burst_duration - onset_step_ms
 
@@ -154,10 +148,7 @@ def burst_overlap_duration(
 def first_spike_filter(
     ampa_events: list[dict] | list[AMPAEvent],
 ) -> list[dict]:
-    """Keep only the first spike from each segment.
-
-    This is the simple first-spike rule for bursts.
-    """
+    """Keep only the first spike from each segment."""
     first_events: dict[int, dict] = {}
 
     for event in ampa_events:
