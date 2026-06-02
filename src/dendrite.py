@@ -146,27 +146,6 @@ def plot_input_raster(raster: dict[int, list[float]], title: str) -> None:
     plt.show()
 
 
-def plot_voltage_heatmap(times: np.ndarray, V_hist: np.ndarray, title: str) -> None:
-    """Plot voltage across all dendrite segments over time."""
-    plt.figure(figsize=(10, 4.5))
-
-    plt.imshow(
-        V_hist.T,
-        aspect="auto",
-        origin="lower",
-        extent=[times[0], times[-1], 0, V_hist.shape[1] - 1],
-        vmin=-1,
-        vmax=1,
-    )
-
-    plt.colorbar(label="voltage")
-    plt.xlabel("time (ms)")
-    plt.ylabel("dendrite segment")
-    plt.title(title)
-    plt.tight_layout()
-    plt.show()
-
-
 def plot_voltage_traces(
     times: np.ndarray,
     V_hist: np.ndarray,
