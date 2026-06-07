@@ -25,7 +25,6 @@ from .dendrite import (
     score_detection,
     print_score,
     plot_input_raster,
-    plot_voltage_heatmap,
     plot_voltage_traces,
     plot_ampa_conductances,
 )
