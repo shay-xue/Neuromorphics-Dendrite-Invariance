@@ -101,9 +101,9 @@ def nmda_conductance(
 
     raw = np.maximum(raw, 0.0)
 
-    # Fixed normalization constant, not time-dependent normalization.
-    # With these coefficients, the peak is around ~1.85.
-    NMDA_KERNEL_PEAK = 1.85
+    # Fixed normalization constant
+    # With these coefficients, the peak is around 0.6.
+    NMDA_KERNEL_PEAK = 2.1694
     raw = raw / NMDA_KERNEL_PEAK
 
     g[mask] = weight * raw
