@@ -231,3 +231,4 @@ def first_spike_filter(
             first_events[segment] = event_dict
 
     return [first_events[seg] for seg in sorted(first_events.keys())]
+

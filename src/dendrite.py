@@ -163,7 +163,11 @@ def print_score(score: dict) -> None:
     print("activation_times:", score["activation_times"])
 
 
-def plot_input_raster(raster: dict[int, list[float]], title: str) -> None:
+def plot_input_raster(
+    raster: dict[int, list[float]],
+    title: str,
+    xlim: tuple[float, float] | None = None,
+) -> None:
     """Plot input spike times for each segment."""
     plt.figure(figsize=(9, 2.8))
 
@@ -175,6 +179,10 @@ def plot_input_raster(raster: dict[int, list[float]], title: str) -> None:
     plt.xlabel("time (ms)")
     plt.ylabel("input segment")
     plt.title(title)
+
+    if xlim is not None:
+        plt.xlim(*xlim)
+
     plt.tight_layout()
     plt.show()
 
