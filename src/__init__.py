@@ -11,7 +11,9 @@ from .channels import (
 from .inputs import (
     AMPAEvent,
     alpha_conductance,
+    nmda_conductance,
     g_AMPA_vector,
+    g_NMDA_vector,
     I_AMPA,
     make_sleep_like_sequence,
     make_burst_sequence,
@@ -27,4 +29,5 @@ from .dendrite import (
     plot_input_raster,
     plot_voltage_traces,
     plot_ampa_conductances,
+    plot_nmda_conductances,
 )

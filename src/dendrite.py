@@ -11,8 +11,8 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .channels import I_axial, I_channels
-from .inputs import I_AMPA, g_AMPA_vector
+from .channels import E_NMDA, sigma_NMDA, I_channels, I_axial
+from .inputs import g_AMPA_vector, g_NMDA_vector, I_AMPA
 
 
 def simulate_dendrite(
@@ -22,6 +22,8 @@ def simulate_dendrite(
     G_NMDA: float = 20.0,
     G_KIR: float = 20.0,
     G_ax: float = 1.0,
+    G_AMPA: float = 1.0,
+    G_NMDA_syn: float = 1.0,
     ampa_events: list[dict] | None = None,
     plateau_segments: int = 5,
     v_rest: float = -1.0,
@@ -29,9 +31,29 @@ def simulate_dendrite(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Run the dendrite simulation.
 
-    The dendrite starts with a plateau at the tip. Then AMPA inputs
+    The dendrite starts with a plateau at the tip. Then spike inputs
     arrive at different segments and we check whether the plateau
     propagates through the sequence.
+
+    Parameters
+    ----------
+    G_NMDA:
+        Intrinsic/baseline NMDA strength. This is part of the bistable
+        NMDA/KIR dendrite model.
+    G_KIR:
+        KIR strength. This is the hyperpolarizing part of the bistable
+        NMDA/KIR dendrite model.
+    G_ax:
+        Axial coupling between neighboring dendrite segments.
+    G_AMPA:
+        Global AMPA input strength.
+    G_NMDA_syn:
+        Event-based NMDA strength. This controls spike-driven NMDA
+        accumulation separately from the intrinsic NMDA/KIR bistability.
+    ampa_events:
+        Spike input events. These are used for both AMPA and event-based NMDA.
+    plateau_segments:
+        Number of initial tip segments set to plateau.
     """
     if ampa_events is None:
         ampa_events = []
@@ -45,21 +67,32 @@ def simulate_dendrite(
     V_hist[0] = v
 
     for idx, t in enumerate(times[1:], start=1):
-        # Current from voltage-dependent channels
-        intrinsic = I_channels(v, G_NMDA=G_NMDA, G_KIR=G_KIR)
+        # Intrinsic NMDA/KIR current creates bistability.
+        intrinsic = I_channels(v, G_NMDA, G_KIR)
 
-        # Current between neighboring segments
+        # Axial current couples neighboring segments.
         axial = I_axial(v, G_ax=G_ax)
 
-        # Current from incoming spikes
+        # Spike-driven AMPA and NMDA conductances.
         g_ampa = g_AMPA_vector(t, n_segments, ampa_events)
-        synaptic = I_AMPA(v, g_ampa)
+        g_nmda_syn = g_NMDA_vector(t, n_segments, ampa_events)
 
-        # Euler update
-        dvdt = intrinsic + axial + synaptic
+        synaptic_ampa = G_AMPA * I_AMPA(v, g_ampa)
+
+        # Event-based NMDA is separated from intrinsic NMDA.
+        # This lets us sweep burst-driven NMDA accumulation independently.
+        synaptic_nmda = (
+            G_NMDA_syn
+            * g_nmda_syn
+            * sigma_NMDA(v)
+            * (E_NMDA - v)
+        )
+
+        dvdt = intrinsic + axial + synaptic_ampa + synaptic_nmda
+
         v = v + dt * dvdt
 
-        # Prevent numerical blow-up
+        # Prevent numerical blow-up.
         v = np.clip(v, -1.5, 1.5)
 
         V_hist[idx] = v
@@ -156,7 +189,7 @@ def plot_voltage_traces(
     plt.figure(figsize=(10, 4.5))
 
     for seg in segments_to_plot:
-        plt.plot(times, V_hist[:, seg], label=f"segment {seg}")
+        plt.plot(times, V_hist[:, int(seg)], label=f"segment {seg}")
 
     plt.axhline(0, linestyle="--", linewidth=1, label="threshold = 0")
     plt.xlabel("time (ms)")
@@ -172,18 +205,53 @@ def plot_ampa_conductances(
     n_segments: int,
     ampa_events: list[dict],
     title: str,
+    segments_to_plot: list[int] | None = None,
 ) -> None:
-    """Plot AMPA input conductance for the stimulated segments."""
+    """Plot AMPA input conductance for selected/stimulated segments."""
+    if segments_to_plot is None:
+        segments_to_plot = sorted(set(int(event["segment"]) for event in ampa_events))
+
+    G_hist = np.zeros((len(times), n_segments))
+
+    for i, t in enumerate(times):
+        G_hist[i, :] = g_AMPA_vector(float(t), n_segments, ampa_events)
+
     plt.figure(figsize=(10, 4))
 
-    segments = sorted(set(int(event["segment"]) for event in ampa_events))
-
-    for seg in segments:
-        g_trace = [g_AMPA_vector(float(t), n_segments, ampa_events)[seg] for t in times]
-        plt.plot(times, g_trace, label=f"segment {seg}")
+    for seg in segments_to_plot:
+        plt.plot(times, G_hist[:, int(seg)], label=f"segment {seg}")
 
     plt.xlabel("time (ms)")
     plt.ylabel("AMPA conductance")
+    plt.title(title)
+    plt.legend(ncol=2)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_nmda_conductances(
+    times: np.ndarray,
+    n_segments: int,
+    nmda_events: list[dict],
+    title: str = "NMDA conductances",
+    segments_to_plot: list[int] | None = None,
+) -> None:
+    """Plot event-based NMDA conductance for selected/stimulated segments."""
+    if segments_to_plot is None:
+        segments_to_plot = sorted(set(int(event["segment"]) for event in nmda_events))
+
+    G_hist = np.zeros((len(times), n_segments))
+
+    for i, t in enumerate(times):
+        G_hist[i, :] = g_NMDA_vector(float(t), n_segments, nmda_events)
+
+    plt.figure(figsize=(10, 4))
+
+    for seg in segments_to_plot:
+        plt.plot(times, G_hist[:, int(seg)], label=f"segment {seg}")
+
+    plt.xlabel("time (ms)")
+    plt.ylabel("NMDA conductance")
     plt.title(title)
     plt.legend(ncol=2)
     plt.tight_layout()
