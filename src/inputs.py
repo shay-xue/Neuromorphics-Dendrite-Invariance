@@ -69,6 +69,67 @@ def I_AMPA(v: np.ndarray, g_ampa: np.ndarray) -> np.ndarray:
     """AMPA synaptic current for each dendrite segment."""
     return g_ampa * (E_AMPA - v)
 
+def nmda_conductance(
+    t,
+    spike_time,
+    weight=1.0,
+    tau_rise=1.4,
+    tau_decay_fast=12.6,
+    tau_decay_mid=57.3,
+    tau_decay_slow=372.0,
+):
+    """NMDA conductance kernel from one spike.
+
+    Important:
+    Do NOT normalize by max(raw) inside this function when it is called
+    one timestep at a time. That turns every positive scalar value into 1.
+    """
+    dt = np.asarray(t) - spike_time
+
+    # scalar-safe output
+    g = np.zeros_like(dt, dtype=float)
+    mask = dt >= 0
+
+    x = dt[mask]
+
+    raw = (
+        0.5 * np.exp(-x / tau_decay_fast)
+        + 1.0 * np.exp(-x / tau_decay_mid)
+        + 1.0 * np.exp(-x / tau_decay_slow)
+        - 2.5 * np.exp(-x / tau_rise)
+    )
+
+    raw = np.maximum(raw, 0.0)
+
+    # Fixed normalization constant, not time-dependent normalization.
+    # With these coefficients, the peak is around ~1.85.
+    NMDA_KERNEL_PEAK = 1.85
+    raw = raw / NMDA_KERNEL_PEAK
+
+    g[mask] = weight * raw
+
+    # Return a scalar if t was scalar, otherwise return array
+    if np.ndim(t) == 0:
+        return float(g)
+
+    return g
+
+def g_NMDA_vector(t, n_segments, nmda_events):
+    g_nmda = np.zeros(n_segments)
+
+    for event in nmda_events:
+        seg = int(event["segment"])
+        spike_time = float(event["time"])
+        weight = float(event.get("weight", 1.0))
+
+        g_nmda[seg] += nmda_conductance(
+            t,
+            spike_time,
+            weight=weight,
+        )
+
+    return g_nmda
+
 
 def make_sleep_like_sequence(
     sequence_segments: list[int],
