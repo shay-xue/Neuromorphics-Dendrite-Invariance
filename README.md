@@ -1,5 +1,5 @@
 # Neuromorphics-Dendrite-Invariance
-Can a dendrite built for sleep handle being awake? We test whether burst-induced spike overlap breaks sequence detection in the HW2 dendrite model, and whether three fixes — swap-tolerance, a first-spike rule, or scaling down NMDA conductance — can make it robust to both sleep-like and wake-like firing.
+Testing our dendrite model with overlapping bursts: We test whether burst-induced spike overlap breaks sequence detection in the HW2 dendrite model, and whether three fixes — swap-tolerance, a first-spike rule, or scaling down NMDA conductance — can make it robust to both sleep-like and wake-like firing.
 
 ---
 
@@ -35,8 +35,5 @@ Neuromorphics-Dendrite-Invariance/
 ├── data/                         # Saved simulation outputs (.npy / .pkl) from long parameter
 │                                 #   sweeps; load these to replot without re-running simulations
 │
-├── HW2.ipynb                     # Original homework — reference only, do not modify
-├── Neuromorphics Project Proposal.pdf
-├── Slides and Readings/          # Course lecture slides and assigned readings by week
 └── README.md
 ```
